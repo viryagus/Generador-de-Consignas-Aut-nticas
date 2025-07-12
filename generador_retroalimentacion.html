@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Retroalimentación 2-2-1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .llm-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+        .llm-button {
+            background-color: #667eea;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .llm-button:hover {
+            background-color: #5a67d8;
+        }
+        .llm-output {
+            background-color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 0.95rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 100px; /* Ensure visibility even when empty */
+        }
+        .loading-indicator {
+            text-align: center;
+            margin-top: 10px;
+            font-style: italic;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6 text-center">✨ Generador de Retroalimentación 2-2-1 ✨</h2>
+        <p class="text-gray-600 mb-6 text-center">Ingresa los detalles para que la IA te ayude a generar una retroalimentación formativa.</p>
+
+        <label for="feedbackPositivo1" class="block text-sm font-medium text-gray-700 mb-1">Aspecto Positivo 1:</label>
+        <input type="text" id="feedbackPositivo1" class="llm-input" placeholder="Ej: Demostró comprensión del tema">
+        
+        <label for="feedbackPositivo2" class="block text-sm font-medium text-gray-700 mb-1">Aspecto Positivo 2:</label>
+        <input type="text" id="feedbackPositivo2" class="llm-input" placeholder="Ej: Creatividad en la presentación">
+
+        <label for="feedbackMejora1" class="block text-sm font-medium text-gray-700 mb-1">Aspecto a Mejorar 1:</label>
+        <input type="text" id="feedbackMejora1" class="llm-input" placeholder="Ej: Necesita profundizar en la argumentación">
+        
+        <label for="feedbackMejora2" class="block text-sm font-medium text-gray-700 mb-1">Aspecto a Mejorar 2:</label>
+        <input type="text" id="feedbackMejora2" class="llm-input" placeholder="Ej: Revisar la coherencia de ideas">
+
+        <label for="feedbackDesafio" class="block text-sm font-medium text-gray-700 mb-1">Próximo Desafío:</label>
+        <input type="text" id="feedbackDesafio" class="llm-input" placeholder="Ej: Aplicar el conocimiento a un nuevo contexto">
+        
+        <button onclick="generateFeedback()" class="llm-button">Generar Retroalimentación</button>
+        <div id="feedbackLoading" class="loading-indicator hidden">Generando retroalimentación...</div>
+        <div id="feedbackOutput" class="llm-output"></div>
+    </div>
+
+    <script>
+        async function callGeminiAPI(prompt) {
+            const apiKey = ""; // Si deseas usar modelos distintos a gemini-2.0-flash o imagen-3.0-generate-002, proporciona una clave API aquí. De lo contrario, déjalo así.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                    return "Error: No se pudo obtener una respuesta de la IA.";
+                }
+            } catch (error) {
+                console.error("Error calling Gemini API:", error);
+                return "Error al conectar con la IA. Inténtalo de nuevo.";
+            }
+        }
+
+        async function generateFeedback() {
+            const positivo1 = document.getElementById('feedbackPositivo1').value;
+            const positivo2 = document.getElementById('feedbackPositivo2').value;
+            const mejora1 = document.getElementById('feedbackMejora1').value;
+            const mejora2 = document.getElementById('feedbackMejora2').value;
+            const desafio = document.getElementById('feedbackDesafio').value;
+            const outputDiv = document.getElementById('feedbackOutput');
+            const loadingDiv = document.getElementById('feedbackLoading');
+
+            if (!positivo1 || !positivo2 || !mejora1 || !mejora2 || !desafio) {
+                outputDiv.textContent = "Por favor, completa todos los campos para generar la retroalimentación 2-2-1.";
+                outputDiv.classList.remove('hidden');
+                return;
+            }
+
+            loadingDiv.classList.remove('hidden');
+            outputDiv.classList.add('hidden');
+            outputDiv.textContent = '';
+
+            const prompt = `Actúa como un docente que da retroalimentación formativa. Basándote en los siguientes puntos, genera una retroalimentación siguiendo el modelo 2-2-1 (2 aspectos positivos, 2 aspectos a mejorar con preguntas/sugerencias, 1 desafío):
+Aspectos Positivos: 1. ${positivo1}, 2. ${positivo2}
+Aspectos a Mejorar: 1. ${mejora1}, 2. ${mejora2}
+Desafío: ${desafio}
+Asegúrate de que el lenguaje sea motivador y claro.`;
+            
+            const generatedText = await callGeminiAPI(prompt);
+            
+            loadingDiv.classList.add('hidden');
+            outputDiv.textContent = generatedText;
+            outputDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
