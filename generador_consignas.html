@@ -91,7 +91,10 @@
 
     <script>
         async function callGeminiAPI(prompt) {
-            const apiKey = ""; // Si deseas usar modelos distintos a gemini-2.0-flash o imagen-3.0-generate-002, proporciona una clave API aquí. De lo contrario, déjalo así.
+            // AQUÍ DEBES PEGAR TU CLAVE DE API DE GEMINI ENTRE LAS COMILLAS
+            const apiKey = "TU_CLAVE_DE_API_AQUI"; 
+            // NO COMPARTAS ESTA CLAVE PÚBLICAMENTE.
+            
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             
             let chatHistory = [];
